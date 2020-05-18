@@ -5,14 +5,13 @@ import pickle
 import argparse
 import dateutil.parser
 from random import shuffle, randrange, uniform
-
 import numpy as np
 from sqlite3 import dbapi2 as sqlite3
 from hashlib import md5
 from flask import Flask, request, session, url_for, redirect, \
-     render_template, abort, g, flash, _app_ctx_stack
+     render_template, abort, g, flash, _app_ctx_stack,make_response,send_from_directory
 from flask_limiter import Limiter
-from werkzeug import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import pymongo
 
 from utils import safe_pickle_dump, strip_version, isvalidid, Config
@@ -248,14 +247,29 @@ def intmain():
   papers = papers_filter_version(papers, vstr)
   ctx = default_context(papers, render_format='recent',
                         msg='Showing most recent Arxiv papers:')
+  print(ctx)
   return render_template('main.html', **ctx)
-
+@app.route("/data/pdf/<filename>")
+def download(filename):
+  cwd = os.getcwd()
+  # app.logger.warning(cwd +"/data/pdf/"+filename)
+  # return send_from_directory(cwd +"/data/pdf/",filename=filename,as_attachment=True)
+  import mimetypes
+  response = make_response(send_from_directory(cwd +"/data/pdf/",filename=filename,as_attachment=True))
+  mime_type = mimetypes.guess_type(filename)[0]
+  # app.logger.warning(mime_type)
+  response.headers['Content-Type'] = 'application/pdf'
+  response.headers["Content-Disposition"] = "inline"#; filename={}".format(filename.encode().decode('latin-1'))
+  response.headers['Server'] = 'Apache'
+  app.logger.warning(response.headers)
+  return response
 @app.route("/<request_pid>")
 def rank(request_pid=None):
   if not isvalidid(request_pid):
     return '' # these are requests for icons, things like robots.txt, etc
   papers = papers_similar(request_pid)
   ctx = default_context(papers, render_format='paper')
+  print(ctx)
   return render_template('main.html', **ctx)
 
 @app.route('/discuss', methods=['GET'])

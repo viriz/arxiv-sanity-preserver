@@ -13,7 +13,9 @@ have = set(os.listdir(Config.pdf_dir)) # get list of all pdfs we already have
 
 numok = 0
 numtot = 0
-db = pickle.load(open(Config.db_path, 'rb'))
+db = pickle.load(open(Config.db_path, 'rb') )
+
+
 for pid,j in db.items():
   
   pdfs = [x['href'] for x in j['links'] if x['type'] == 'application/pdf']
@@ -38,7 +40,7 @@ for pid,j in db.items():
     print('error downloading: ', pdf_url)
     print(e)
   
-  print('%d/%d of %d downloaded ok.' % (numok, numtot, len(db)))
+  print('%d/%d of %d downloaded ok. already have %d' % (numok, numtot, len(db) , len(have) ))
   
 print('final number of papers downloaded okay: %d/%d' % (numok, len(db)))
 
